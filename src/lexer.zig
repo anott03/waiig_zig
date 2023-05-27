@@ -1,5 +1,4 @@
 const std = @import("std");
-
 const token = @import("token.zig");
 const Token = token.Token;
 
@@ -15,7 +14,7 @@ fn is_whitespace(c: u8) bool {
     return c == ' ' or c == '\t' or c == '\n';
 }
 
-const Lexer = struct {
+pub const Lexer = struct {
     const Self = @This();
 
     input: []const u8,
@@ -44,20 +43,27 @@ const Lexer = struct {
         self.read_position += 1;
     }
 
+    fn peek_char(self: *Self) u8 {
+        if (self.read_position >= self.input.len) {
+            return 0;
+        }
+        return self.input[self.read_position];
+    }
+
     fn read_identifier(self: *Self) []const u8 {
         var pos = self.position;
-        while (is_alphabetic(self.ch) or self.ch == '_') {
+        while (is_alphabetic(self.peek_char()) or self.peek_char() == '_') {
             self.read_char();
         }
-        return self.input[pos..self.position];
+        return self.input[pos..self.read_position];
     }
 
     fn read_number(self: *Self) []const u8 {
         var pos = self.position;
-        while (is_digit(self.ch)) {
+        while (is_digit(self.peek_char())) {
             self.read_char();
         }
-        return self.input[pos..self.position];
+        return self.input[pos..self.read_position];
     }
 
     pub fn next_token(self: *Self) !Token {
@@ -69,7 +75,13 @@ const Lexer = struct {
         var tokType: token.TokenType = undefined;
         switch (self.ch) {
             '=' => {
-                tokType = token.TokenType.ASSIGN;
+                if (self.peek_char() == '=') {
+                    self.read_char();
+                    literal = "==";
+                    tokType = token.TokenType.EQ;
+                } else {
+                    tokType = token.TokenType.ASSIGN;
+                }
             },
             '+' => {
                 tokType = token.TokenType.PLUS;
@@ -78,7 +90,13 @@ const Lexer = struct {
                 tokType = token.TokenType.MINUS;
             },
             '!' => {
-                tokType = token.TokenType.BANG;
+                if (self.peek_char() == '=') {
+                    self.read_char();
+                    literal = "!=";
+                    tokType = token.TokenType.NEQ;
+                } else {
+                    tokType = token.TokenType.BANG;
+                }
             },
             '*' => {
                 tokType = token.TokenType.ASTERISK;
@@ -110,6 +128,10 @@ const Lexer = struct {
             ',' => {
                 tokType = token.TokenType.COMMA;
             },
+            0 => {
+                literal = "";
+                tokType = token.TokenType.EOF;
+            },
             else => {
                 if (is_alphabetic(self.ch)) {
                     literal = self.read_identifier();
@@ -130,52 +152,3 @@ const Lexer = struct {
         };
     }
 };
-
-const testing = @import("std").testing;
-test "lexer full statement" {
-    const input = "let five = 5;";
-    var lexer = Lexer.new(input);
-    var t: Token = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.LET, t.type);
-    t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.IDENT, t.type);
-    t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.ASSIGN, t.type);
-    t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.INT, t.type);
-}
-
-test "lexer assign" {
-    const input = "=";
-    var lexer = Lexer.new(input);
-    try testing.expectEqual(lexer.ch, '=');
-}
-
-test "debugging" {
-    const input = "let five = 5;";
-    var lexer = Lexer.new(input);
-    var t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.LET, t.type);
-}
-
-test "big test" {
-    var input =
-        \\let five = 5;
-        \\let ten = 10;
-        \\
-        \\let add = fn(x, y) {
-        \\    x + y;
-        \\};
-        \\
-        \\let result = add(five, ten);
-        \\!-/*5;
-        \\5 < 10 > 5
-    ;
-    var lexer = Lexer.new(input);
-    var t = try lexer.next_token();
-    for (0..10) |_| {
-        _ = try lexer.next_token();
-    }
-    t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.FUNCTION, t.type);
-}

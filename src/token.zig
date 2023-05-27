@@ -11,8 +11,14 @@ pub const TokenType = enum {
     RPAREN,
     LSQUIRLY,
     RSQUIRLY,
+
     FUNCTION,
     LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN,
 
     ASSIGN,
     PLUS,
@@ -23,6 +29,8 @@ pub const TokenType = enum {
 
     LT,
     GT,
+    EQ,
+    NEQ,
 };
 
 pub const Token = struct {
@@ -35,6 +43,11 @@ pub fn lookup_ident(literal: []const u8) !TokenType {
     var keywords: HashMap = HashMap.init(std.heap.page_allocator);
     try keywords.put("fn", TokenType.FUNCTION);
     try keywords.put("let", TokenType.LET);
+    try keywords.put("true", TokenType.TRUE);
+    try keywords.put("false", TokenType.FALSE);
+    try keywords.put("if", TokenType.IF);
+    try keywords.put("else", TokenType.ELSE);
+    try keywords.put("return", TokenType.RETURN);
 
     const tok = keywords.get(literal);
     if (tok == null) {
