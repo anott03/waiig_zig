@@ -13,8 +13,8 @@ pub fn start() !void {
             std.debug.print("Error getting next token");
             return;
         };
-        while (tok.type != token.TokenType.EOF) {
-            std.debug.print("{s}\n", .{tok.literal});
+        while (tok != token.Token.EOF) {
+            std.debug.print("{?}\n", .{tok});
             tok = l.next_token() catch {
                 std.debug.print("Error getting next token");
                 return;

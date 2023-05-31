@@ -9,13 +9,12 @@ test "lexer full statement" {
     var t: token.Token = try lexer.next_token();
     try testing.expectEqual(token.Token.LET, t);
     t = try lexer.next_token();
-    try testing.expectEqual(token.Token{ .IDENT = "five" }, t);
+    try testing.expectEqualStrings("five", t.IDENT);
     t = try lexer.next_token();
     try testing.expectEqual(token.Token.ASSIGN, t);
     t = try lexer.next_token();
     try testing.expectEqual(token.Token.INT, t);
 }
-
 test "lexer.assign" {
     const input = "=";
     var lexer = Lexer.new(input);
@@ -156,8 +155,14 @@ test "lexer.big_test" {
     };
     var lexer = Lexer.new(input);
     for (corrects, 0..) |correct, i| {
+        _ = i;
         var t = try lexer.next_token();
-        try testing.expectEqual(correct, t);
-        std.debug.print("pass {}\n", .{i});
+        switch (correct) {
+            .IDENT => try testing.expectEqualStrings(correct.IDENT, t.IDENT),
+            .INT => try testing.expectEqualStrings(correct.INT, t.INT),
+            else => try testing.expectEqual(correct, t),
+        }
+        std.debug.print("{?}\n", .{t});
+        // std.debug.print("pass {}\n{c}\n", .{ i, lexer.ch });
     }
 }

@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub const Token = union(enum) {
-    ILLEGAL: []const u8,
+    ILLEGAL,
     EOF,
     IDENT: []const u8,
     INT: []const u8,

@@ -72,12 +72,10 @@ pub const Lexer = struct {
         }
 
         defer self.read_char();
-        var literal: []const u8 = self.input[self.position..self.read_position];
         switch (self.ch) {
             '=' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
-                    literal = "==";
                     return Token.EQ;
                 } else {
                     return Token.ASSIGN;
@@ -92,7 +90,6 @@ pub const Lexer = struct {
             '!' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
-                    literal = "!=";
                     return Token.NEQ;
                 } else {
                     return Token.BANG;
@@ -129,18 +126,17 @@ pub const Lexer = struct {
                 return Token.COMMA;
             },
             0 => {
-                literal = "";
                 return Token.EOF;
             },
             else => {
                 if (is_alphabetic(self.ch)) {
-                    literal = self.read_identifier();
-                    return token.lookup_ident(literal) catch Token{ .ILLEGAL = literal };
+                    var literal = self.read_identifier();
+                    return token.lookup_ident(literal) catch Token.ILLEGAL;
                 } else if (is_digit(self.ch)) {
-                    literal = self.read_number();
+                    var literal = self.read_number();
                     return Token{ .INT = literal };
                 } else {
-                    return Token{ .ILLEGAL = literal };
+                    return Token.ILLEGAL;
                 }
             },
         }
