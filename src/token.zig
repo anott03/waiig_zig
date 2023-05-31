@@ -1,10 +1,10 @@
 const std = @import("std");
 
-pub const TokenType = enum {
-    ILLEGAL,
+pub const Token = union(enum) {
+    ILLEGAL: []const u8,
     EOF,
-    IDENT,
-    INT,
+    IDENT: []const u8,
+    INT: []const u8,
     COMMA,
     SEMICOLON,
     LPAREN,
@@ -33,36 +33,36 @@ pub const TokenType = enum {
     NEQ,
 };
 
-pub const Token = struct {
-    type: TokenType,
-    literal: []const u8,
-};
+// pub const Token = struct {
+//     type: TokenType,
+//     literal: []const u8,
+// };
 
-const HashMap = std.StringHashMap(TokenType);
-pub fn lookup_ident(literal: []const u8) !TokenType {
+const HashMap = std.StringHashMap(Token);
+pub fn lookup_ident(literal: []const u8) !Token {
     var keywords: HashMap = HashMap.init(std.heap.page_allocator);
-    try keywords.put("fn", TokenType.FUNCTION);
-    try keywords.put("let", TokenType.LET);
-    try keywords.put("true", TokenType.TRUE);
-    try keywords.put("false", TokenType.FALSE);
-    try keywords.put("if", TokenType.IF);
-    try keywords.put("else", TokenType.ELSE);
-    try keywords.put("return", TokenType.RETURN);
+    try keywords.put("fn", Token.FUNCTION);
+    try keywords.put("let", Token.LET);
+    try keywords.put("true", Token.TRUE);
+    try keywords.put("false", Token.FALSE);
+    try keywords.put("if", Token.IF);
+    try keywords.put("else", Token.ELSE);
+    try keywords.put("return", Token.RETURN);
 
     const tok = keywords.get(literal);
     if (tok == null) {
-        return TokenType.IDENT;
+        return Token{ .IDENT = literal };
     }
     return tok.?;
 }
 
 test "lookup_ident" {
-    var t: TokenType = try lookup_ident("let");
-    try std.testing.expectEqual(t, TokenType.LET);
+    var t: Token = try lookup_ident("let");
+    try std.testing.expectEqual(t, Token.LET);
 
     t = try lookup_ident("five");
-    try std.testing.expectEqual(t, TokenType.IDENT);
+    try std.testing.expectEqual(t, Token{ .IDENT = "five" });
 
     t = try lookup_ident("fn");
-    try std.testing.expectEqual(t, TokenType.FUNCTION);
+    try std.testing.expectEqual(t, Token.FUNCTION);
 }

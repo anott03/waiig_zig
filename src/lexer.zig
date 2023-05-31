@@ -71,84 +71,78 @@ pub const Lexer = struct {
             self.read_char();
         }
 
+        defer self.read_char();
         var literal: []const u8 = self.input[self.position..self.read_position];
-        var tokType: token.TokenType = undefined;
         switch (self.ch) {
             '=' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
                     literal = "==";
-                    tokType = token.TokenType.EQ;
+                    return Token.EQ;
                 } else {
-                    tokType = token.TokenType.ASSIGN;
+                    return Token.ASSIGN;
                 }
             },
             '+' => {
-                tokType = token.TokenType.PLUS;
+                return Token.PLUS;
             },
             '-' => {
-                tokType = token.TokenType.MINUS;
+                return Token.MINUS;
             },
             '!' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
                     literal = "!=";
-                    tokType = token.TokenType.NEQ;
+                    return Token.NEQ;
                 } else {
-                    tokType = token.TokenType.BANG;
+                    return Token.BANG;
                 }
             },
             '*' => {
-                tokType = token.TokenType.ASTERISK;
+                return Token.ASTERISK;
             },
             '/' => {
-                tokType = token.TokenType.SLASH;
+                return Token.SLASH;
             },
             '<' => {
-                tokType = token.TokenType.LT;
+                return Token.LT;
             },
             '>' => {
-                tokType = token.TokenType.GT;
+                return Token.GT;
             },
             ';' => {
-                tokType = token.TokenType.SEMICOLON;
+                return Token.SEMICOLON;
             },
             '(' => {
-                tokType = token.TokenType.LPAREN;
+                return Token.LPAREN;
             },
             ')' => {
-                tokType = token.TokenType.RPAREN;
+                return Token.RPAREN;
             },
             '{' => {
-                tokType = token.TokenType.LSQUIRLY;
+                return Token.LSQUIRLY;
             },
             '}' => {
-                tokType = token.TokenType.RSQUIRLY;
+                return Token.RSQUIRLY;
             },
             ',' => {
-                tokType = token.TokenType.COMMA;
+                return Token.COMMA;
             },
             0 => {
                 literal = "";
-                tokType = token.TokenType.EOF;
+                return Token.EOF;
             },
             else => {
                 if (is_alphabetic(self.ch)) {
                     literal = self.read_identifier();
-                    tokType = token.lookup_ident(literal) catch token.TokenType.ILLEGAL;
+                    return token.lookup_ident(literal) catch Token{ .ILLEGAL = literal };
                 } else if (is_digit(self.ch)) {
                     literal = self.read_number();
-                    tokType = token.TokenType.INT;
+                    return Token{ .INT = literal };
                 } else {
-                    tokType = token.TokenType.ILLEGAL;
+                    return Token{ .ILLEGAL = literal };
                 }
             },
         }
-
-        self.read_char();
-        return .{
-            .type = tokType,
-            .literal = literal,
-        };
     }
 };

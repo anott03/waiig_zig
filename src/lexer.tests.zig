@@ -7,13 +7,13 @@ test "lexer full statement" {
     const input = "let five = 5;";
     var lexer = Lexer.new(input);
     var t: token.Token = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.LET, t.type);
+    try testing.expectEqual(token.Token.LET, t);
     t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.IDENT, t.type);
+    try testing.expectEqual(token.Token{ .IDENT = "five" }, t);
     t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.ASSIGN, t.type);
+    try testing.expectEqual(token.Token.ASSIGN, t);
     t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.INT, t.type);
+    try testing.expectEqual(token.Token.INT, t);
 }
 
 test "lexer.assign" {
@@ -26,7 +26,7 @@ test "lexer.small_test" {
     const input = "let five = 5;";
     var lexer = Lexer.new(input);
     var t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.LET, t.type);
+    try testing.expectEqual(token.Token.LET, t);
 }
 
 test "lexer.two_char_token" {
@@ -34,19 +34,19 @@ test "lexer.two_char_token" {
     var lexer = Lexer.new(input);
     _ = try lexer.next_token();
     const t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.EQ, t.type);
+    try testing.expectEqual(token.Token.EQ, t);
 }
 
 test "lexer.keyword" {
     const input = "let add = fn(x, y) { x + y; };";
     var lexer = Lexer.new(input);
     var t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.LET, t.type);
+    try testing.expectEqual(token.Token.LET, t);
     for (0..2) |_| {
         _ = try lexer.next_token();
     }
     t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.FUNCTION, t.type);
+    try testing.expectEqual(token.Token.FUNCTION, t);
 }
 
 test "lexer.semicolon" {
@@ -56,7 +56,7 @@ test "lexer.semicolon" {
         _ = try lexer.next_token();
     }
     const t = try lexer.next_token();
-    try testing.expectEqual(token.TokenType.SEMICOLON, t.type);
+    try testing.expectEqual(token.Token.SEMICOLON, t);
 }
 
 test "lexer.big_test" {
@@ -79,85 +79,85 @@ test "lexer.big_test" {
         \\10 == 10;
         \\10 != 10;
     ;
-    const correct_types: [73]token.TokenType = .{
-        token.TokenType.LET,
-        token.TokenType.IDENT,
-        token.TokenType.ASSIGN,
-        token.TokenType.INT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.LET,
-        token.TokenType.IDENT,
-        token.TokenType.ASSIGN,
-        token.TokenType.INT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.LET,
-        token.TokenType.IDENT,
-        token.TokenType.ASSIGN,
-        token.TokenType.FUNCTION,
-        token.TokenType.LPAREN,
-        token.TokenType.IDENT,
-        token.TokenType.COMMA,
-        token.TokenType.IDENT,
-        token.TokenType.RPAREN,
-        token.TokenType.LSQUIRLY,
-        token.TokenType.IDENT,
-        token.TokenType.PLUS,
-        token.TokenType.IDENT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.RSQUIRLY,
-        token.TokenType.SEMICOLON,
-        token.TokenType.LET,
-        token.TokenType.IDENT,
-        token.TokenType.ASSIGN,
-        token.TokenType.IDENT,
-        token.TokenType.LPAREN,
-        token.TokenType.IDENT,
-        token.TokenType.COMMA,
-        token.TokenType.IDENT,
-        token.TokenType.RPAREN,
-        token.TokenType.SEMICOLON,
-        token.TokenType.BANG,
-        token.TokenType.MINUS,
-        token.TokenType.SLASH,
-        token.TokenType.ASTERISK,
-        token.TokenType.INT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.INT,
-        token.TokenType.LT,
-        token.TokenType.INT,
-        token.TokenType.GT,
-        token.TokenType.INT,
-        token.TokenType.IF,
-        token.TokenType.LPAREN,
-        token.TokenType.INT,
-        token.TokenType.LT,
-        token.TokenType.INT,
-        token.TokenType.RPAREN,
-        token.TokenType.LSQUIRLY,
-        token.TokenType.RETURN,
-        token.TokenType.TRUE,
-        token.TokenType.SEMICOLON,
-        token.TokenType.RSQUIRLY,
-        token.TokenType.ELSE,
-        token.TokenType.LSQUIRLY,
-        token.TokenType.RETURN,
-        token.TokenType.FALSE,
-        token.TokenType.SEMICOLON,
-        token.TokenType.RSQUIRLY,
-        token.TokenType.INT,
-        token.TokenType.EQ,
-        token.TokenType.INT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.INT,
-        token.TokenType.NEQ,
-        token.TokenType.INT,
-        token.TokenType.SEMICOLON,
-        token.TokenType.EOF,
+    const corrects: [73]token.Token = .{
+        token.Token.LET,
+        token.Token{ .IDENT = "five" },
+        token.Token.ASSIGN,
+        token.Token{ .INT = "5" },
+        token.Token.SEMICOLON,
+        token.Token.LET,
+        token.Token{ .IDENT = "ten" },
+        token.Token.ASSIGN,
+        token.Token{ .INT = "10" },
+        token.Token.SEMICOLON,
+        token.Token.LET,
+        token.Token{ .IDENT = "add" },
+        token.Token.ASSIGN,
+        token.Token.FUNCTION,
+        token.Token.LPAREN,
+        token.Token{ .IDENT = "x" },
+        token.Token.COMMA,
+        token.Token{ .IDENT = "y" },
+        token.Token.RPAREN,
+        token.Token.LSQUIRLY,
+        token.Token{ .IDENT = "x" },
+        token.Token.PLUS,
+        token.Token{ .IDENT = "y" },
+        token.Token.SEMICOLON,
+        token.Token.RSQUIRLY,
+        token.Token.SEMICOLON,
+        token.Token.LET,
+        token.Token{ .IDENT = "result" },
+        token.Token.ASSIGN,
+        token.Token{ .IDENT = "add" },
+        token.Token.LPAREN,
+        token.Token{ .IDENT = "five" },
+        token.Token.COMMA,
+        token.Token{ .IDENT = "ten" },
+        token.Token.RPAREN,
+        token.Token.SEMICOLON,
+        token.Token.BANG,
+        token.Token.MINUS,
+        token.Token.SLASH,
+        token.Token.ASTERISK,
+        token.Token{ .INT = "5" },
+        token.Token.SEMICOLON,
+        token.Token{ .INT = "5" },
+        token.Token.LT,
+        token.Token{ .INT = "10" },
+        token.Token.GT,
+        token.Token{ .INT = "5" },
+        token.Token.IF,
+        token.Token.LPAREN,
+        token.Token{ .INT = "5" },
+        token.Token.LT,
+        token.Token{ .INT = "10" },
+        token.Token.RPAREN,
+        token.Token.LSQUIRLY,
+        token.Token.RETURN,
+        token.Token.TRUE,
+        token.Token.SEMICOLON,
+        token.Token.RSQUIRLY,
+        token.Token.ELSE,
+        token.Token.LSQUIRLY,
+        token.Token.RETURN,
+        token.Token.FALSE,
+        token.Token.SEMICOLON,
+        token.Token.RSQUIRLY,
+        token.Token{ .INT = "10" },
+        token.Token.EQ,
+        token.Token{ .INT = "10" },
+        token.Token.SEMICOLON,
+        token.Token{ .INT = "10" },
+        token.Token.NEQ,
+        token.Token{ .INT = "10" },
+        token.Token.SEMICOLON,
+        token.Token.EOF,
     };
     var lexer = Lexer.new(input);
-    for (correct_types, 0..) |correct_type, i| {
+    for (corrects, 0..) |correct, i| {
         var t = try lexer.next_token();
-        try testing.expectEqual(correct_type, t.type);
+        try testing.expectEqual(correct, t);
         std.debug.print("pass {}\n", .{i});
     }
 }
