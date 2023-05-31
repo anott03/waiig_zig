@@ -66,13 +66,13 @@ pub const Lexer = struct {
         return self.input[pos..self.read_position];
     }
 
-    pub fn next_token(self: *Self) !Token {
+    pub fn next_token(self: *Self) Token {
         while (is_whitespace(self.ch)) {
             self.read_char();
         }
 
         defer self.read_char();
-        switch (self.ch) {
+        const tok: Token = switch (self.ch) {
             '=' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
@@ -81,12 +81,8 @@ pub const Lexer = struct {
                     return Token.ASSIGN;
                 }
             },
-            '+' => {
-                return Token.PLUS;
-            },
-            '-' => {
-                return Token.MINUS;
-            },
+            '+' => Token.PLUS,
+            '-' => Token.MINUS,
             '!' => {
                 if (self.peek_char() == '=') {
                     self.read_char();
@@ -95,50 +91,27 @@ pub const Lexer = struct {
                     return Token.BANG;
                 }
             },
-            '*' => {
-                return Token.ASTERISK;
+            '*' => Token.ASTERISK,
+            '/' => Token.SLASH,
+            '<' => Token.LT,
+            '>' => Token.GT,
+            ';' => Token.SEMICOLON,
+            '(' => Token.LPAREN,
+            ')' => Token.RPAREN,
+            '{' => Token.LSQUIRLY,
+            '}' => Token.RSQUIRLY,
+            ',' => Token.COMMA,
+            0 => Token.EOF,
+            'a'...'z', 'A'...'Z', '_' => {
+                const literal = self.read_identifier();
+                return token.lookup_ident(literal);
             },
-            '/' => {
-                return Token.SLASH;
+            '0'...'9' => {
+                var literal = self.read_number();
+                return Token{ .INT = literal };
             },
-            '<' => {
-                return Token.LT;
-            },
-            '>' => {
-                return Token.GT;
-            },
-            ';' => {
-                return Token.SEMICOLON;
-            },
-            '(' => {
-                return Token.LPAREN;
-            },
-            ')' => {
-                return Token.RPAREN;
-            },
-            '{' => {
-                return Token.LSQUIRLY;
-            },
-            '}' => {
-                return Token.RSQUIRLY;
-            },
-            ',' => {
-                return Token.COMMA;
-            },
-            0 => {
-                return Token.EOF;
-            },
-            else => {
-                if (is_alphabetic(self.ch)) {
-                    var literal = self.read_identifier();
-                    return token.lookup_ident(literal) catch Token.ILLEGAL;
-                } else if (is_digit(self.ch)) {
-                    var literal = self.read_number();
-                    return Token{ .INT = literal };
-                } else {
-                    return Token.ILLEGAL;
-                }
-            },
-        }
+            else => Token.ILLEGAL,
+        };
+        return tok;
     }
 };

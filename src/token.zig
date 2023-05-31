@@ -1,17 +1,17 @@
 const std = @import("std");
 
 pub const Token = union(enum) {
-    ILLEGAL,
-    EOF,
     IDENT: []const u8,
     INT: []const u8,
+
+    ILLEGAL,
+    EOF,
     COMMA,
     SEMICOLON,
     LPAREN,
     RPAREN,
     LSQUIRLY,
     RSQUIRLY,
-
     FUNCTION,
     LET,
     TRUE,
@@ -33,22 +33,17 @@ pub const Token = union(enum) {
     NEQ,
 };
 
-// pub const Token = struct {
-//     type: TokenType,
-//     literal: []const u8,
-// };
+const keywords = std.ComptimeStringMap(Token, .{
+    .{ "fn", .FUNCTION },
+    .{ "let", .LET },
+    .{ "true", .TRUE },
+    .{ "false", .FALSE },
+    .{ "if", .IF },
+    .{ "else", .ELSE },
+    .{ "return", .RETURN },
+});
 
-const HashMap = std.StringHashMap(Token);
-pub fn lookup_ident(literal: []const u8) !Token {
-    var keywords: HashMap = HashMap.init(std.heap.page_allocator);
-    try keywords.put("fn", Token.FUNCTION);
-    try keywords.put("let", Token.LET);
-    try keywords.put("true", Token.TRUE);
-    try keywords.put("false", Token.FALSE);
-    try keywords.put("if", Token.IF);
-    try keywords.put("else", Token.ELSE);
-    try keywords.put("return", Token.RETURN);
-
+pub fn lookup_ident(literal: []const u8) Token {
     const tok = keywords.get(literal);
     if (tok == null) {
         return Token{ .IDENT = literal };
@@ -57,12 +52,12 @@ pub fn lookup_ident(literal: []const u8) !Token {
 }
 
 test "lookup_ident" {
-    var t: Token = try lookup_ident("let");
+    var t: Token = lookup_ident("let");
     try std.testing.expectEqual(t, Token.LET);
 
-    t = try lookup_ident("five");
+    t = lookup_ident("five");
     try std.testing.expectEqual(t, Token{ .IDENT = "five" });
 
-    t = try lookup_ident("fn");
+    t = lookup_ident("fn");
     try std.testing.expectEqual(t, Token.FUNCTION);
 }

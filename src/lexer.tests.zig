@@ -6,13 +6,13 @@ const testing = @import("std").testing;
 test "lexer full statement" {
     const input = "let five = 5;";
     var lexer = Lexer.new(input);
-    var t: token.Token = try lexer.next_token();
+    var t: token.Token = lexer.next_token();
     try testing.expectEqual(token.Token.LET, t);
-    t = try lexer.next_token();
+    t = lexer.next_token();
     try testing.expectEqualStrings("five", t.IDENT);
-    t = try lexer.next_token();
+    t = lexer.next_token();
     try testing.expectEqual(token.Token.ASSIGN, t);
-    t = try lexer.next_token();
+    t = lexer.next_token();
     try testing.expectEqual(token.Token.INT, t);
 }
 test "lexer.assign" {
@@ -24,27 +24,27 @@ test "lexer.assign" {
 test "lexer.small_test" {
     const input = "let five = 5;";
     var lexer = Lexer.new(input);
-    var t = try lexer.next_token();
+    var t = lexer.next_token();
     try testing.expectEqual(token.Token.LET, t);
 }
 
 test "lexer.two_char_token" {
     const input = "10 == 10";
     var lexer = Lexer.new(input);
-    _ = try lexer.next_token();
-    const t = try lexer.next_token();
+    _ = lexer.next_token();
+    const t = lexer.next_token();
     try testing.expectEqual(token.Token.EQ, t);
 }
 
 test "lexer.keyword" {
     const input = "let add = fn(x, y) { x + y; };";
     var lexer = Lexer.new(input);
-    var t = try lexer.next_token();
+    var t = lexer.next_token();
     try testing.expectEqual(token.Token.LET, t);
     for (0..2) |_| {
-        _ = try lexer.next_token();
+        _ = lexer.next_token();
     }
-    t = try lexer.next_token();
+    t = lexer.next_token();
     try testing.expectEqual(token.Token.FUNCTION, t);
 }
 
@@ -52,9 +52,9 @@ test "lexer.semicolon" {
     const input = "10 == 10;";
     var lexer = Lexer.new(input);
     for (0..3) |_| {
-        _ = try lexer.next_token();
+        _ = lexer.next_token();
     }
-    const t = try lexer.next_token();
+    const t = lexer.next_token();
     try testing.expectEqual(token.Token.SEMICOLON, t);
 }
 
@@ -156,7 +156,7 @@ test "lexer.big_test" {
     var lexer = Lexer.new(input);
     for (corrects, 0..) |correct, i| {
         _ = i;
-        var t = try lexer.next_token();
+        var t = lexer.next_token();
         switch (correct) {
             .IDENT => try testing.expectEqualStrings(correct.IDENT, t.IDENT),
             .INT => try testing.expectEqualStrings(correct.INT, t.INT),
