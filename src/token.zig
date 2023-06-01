@@ -51,6 +51,41 @@ pub fn lookup_ident(literal: []const u8) Token {
     return tok.?;
 }
 
+pub fn get_literal(t: Token) []const u8 {
+    return switch (t) {
+        .IDENT => t.IDENT,
+        .INT => t.INT,
+
+        .ILLEGAL => .{0},
+        .EOF => .{0},
+        .COMMA => ",",
+        .SEMICOLON => ";",
+        .LPAREN => "(",
+        .RPAREN => ")",
+        .LSQUIRLY => "{",
+        .RSQUIRLY => "}",
+        .FUNCTION => "fn",
+        .LET => "let",
+        .TRUE => "true",
+        .FALSE => "false",
+        .IF => "if",
+        .ELSE => "else",
+        .RETURN => "return",
+
+        .ASSIGN => "=",
+        .PLUS => "+",
+        .MINUS => "-",
+        .BANG => "!",
+        .ASTERISK => "*",
+        .SLASH => "/",
+
+        .LT => "<",
+        .GT => ">",
+        .EQ => "==",
+        .NEQ => "!=",
+    };
+}
+
 test "lookup_ident" {
     var t: Token = lookup_ident("let");
     try std.testing.expectEqual(t, Token.LET);

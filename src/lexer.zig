@@ -3,11 +3,11 @@ const token = @import("token.zig");
 const Token = token.Token;
 
 fn is_digit(d: u8) bool {
-    return '0' <= d and '9' >= d;
+    return std.ascii.isDigit(d);
 }
 
 fn is_alphabetic(c: u8) bool {
-    return ('a' <= c and 'z' >= c) or ('A' <= c and 'Z' >= c);
+    return std.ascii.isAlphabetic(c);
 }
 
 fn is_whitespace(c: u8) bool {
@@ -72,46 +72,45 @@ pub const Lexer = struct {
         }
 
         defer self.read_char();
-        const tok: Token = switch (self.ch) {
-            '=' => {
+        return switch (self.ch) {
+            '=' => blk: {
                 if (self.peek_char() == '=') {
                     self.read_char();
-                    return Token.EQ;
+                    break :blk .EQ;
                 } else {
-                    return Token.ASSIGN;
+                    break :blk .ASSIGN;
                 }
             },
-            '+' => Token.PLUS,
-            '-' => Token.MINUS,
-            '!' => {
+            '+' => .PLUS,
+            '-' => .MINUS,
+            '!' => blk: {
                 if (self.peek_char() == '=') {
                     self.read_char();
-                    return Token.NEQ;
+                    break :blk .NEQ;
                 } else {
-                    return Token.BANG;
+                    break :blk .BANG;
                 }
             },
-            '*' => Token.ASTERISK,
-            '/' => Token.SLASH,
-            '<' => Token.LT,
-            '>' => Token.GT,
-            ';' => Token.SEMICOLON,
-            '(' => Token.LPAREN,
-            ')' => Token.RPAREN,
-            '{' => Token.LSQUIRLY,
-            '}' => Token.RSQUIRLY,
-            ',' => Token.COMMA,
-            0 => Token.EOF,
-            'a'...'z', 'A'...'Z', '_' => {
+            '*' => .ASTERISK,
+            '/' => .SLASH,
+            '<' => .LT,
+            '>' => .GT,
+            ';' => .SEMICOLON,
+            '(' => .LPAREN,
+            ')' => .RPAREN,
+            '{' => .LSQUIRLY,
+            '}' => .RSQUIRLY,
+            ',' => .COMMA,
+            0 => .EOF,
+            'a'...'z', 'A'...'Z', '_' => blk: {
                 const literal = self.read_identifier();
-                return token.lookup_ident(literal);
+                break :blk token.lookup_ident(literal);
             },
-            '0'...'9' => {
+            '0'...'9' => blk: {
                 var literal = self.read_number();
-                return Token{ .INT = literal };
+                break :blk .{ .INT = literal };
             },
-            else => Token.ILLEGAL,
+            else => .ILLEGAL,
         };
-        return tok;
     }
 };
