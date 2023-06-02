@@ -1,3 +1,4 @@
+const std = @import("std");
 const lexer = @import("lexer.zig");
 const token = @import("tokne.zig");
 const ast = @import("ast.zig");
@@ -26,3 +27,23 @@ pub const Parser = struct {
         return null;
     }
 };
+
+test "let_statement" {
+    const input =
+        \\let x = 5;
+        \\let y = 10;
+        \\let foobar = 838383;
+    ;
+
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    var program: ?ast.Program = p.parse_program();
+    if (program == null) {
+        std.debug.print("Error", .{});
+    } else {
+        std.testing.expectEqual(3, program.?.statements.len);
+        for (program.?.statements) |statement| {
+            _ = statement;
+        }
+    }
+}
