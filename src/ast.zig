@@ -1,9 +1,10 @@
 const std = @import("std");
 const t = @import("token.zig");
 
-const Program = struct {
+pub const Program = struct {
     const Self = @This();
     statements: ?[]Statement,
+    stmt_idx: usize,
     pub fn token_literal(self: Self) []const u8 {
         if (self.statements) |statements| {
             return statements[0].token_literal();
@@ -11,13 +12,13 @@ const Program = struct {
         return "";
     }
 };
-const Statement = struct {
+pub const Statement = struct {
     name: Identifier,
     value: Expression,
 };
-const Identifier = struct {
+pub const Identifier = struct {
     const Self = @This();
-    token: t.Token.IDENT,
+    token: t.Token,
     value: []const u8,
 
     fn expression_node(self: Self) void {
@@ -27,15 +28,15 @@ const Identifier = struct {
         return t.get_literal(self.token);
     }
 };
-const Expression = struct {
+pub const Expression = struct {
     pub fn token_literal() []const u8 {
         return "";
     }
     fn expression_node() void {}
 };
-const LetStatement = struct {
+pub const LetStatement = struct {
     const Self = @This();
-    token: t.Token.LET,
+    token: t.Token,
     name: Identifier,
     value: Expression,
 
@@ -47,6 +48,4 @@ const LetStatement = struct {
     }
 };
 
-test "struct" {
-    std.debug.print("hello, world\n", .{});
-}
+test "struct" {}
