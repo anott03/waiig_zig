@@ -12,10 +12,7 @@ pub const Program = struct {
         return "";
     }
 };
-pub const Statement = struct {
-    name: Identifier,
-    value: Expression,
-};
+pub const Statement = union(enum) { LetStatement: LetStatement };
 pub const Identifier = struct {
     const Self = @This();
     token: t.Token,

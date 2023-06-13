@@ -56,8 +56,8 @@ pub fn get_literal(t: Token) []const u8 {
         .IDENT => t.IDENT,
         .INT => t.INT,
 
-        .ILLEGAL => .{0},
-        .EOF => .{0},
+        .ILLEGAL => "",
+        .EOF => "",
         .COMMA => ",",
         .SEMICOLON => ";",
         .LPAREN => "(",
