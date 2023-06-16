@@ -85,8 +85,7 @@ const Parser = struct {
         if (!self.expect_peek(token.Token.ASSIGN)) {
             return null;
         }
-        while (!self.curr_token_is(token.Token.SEMICOLON)) {
-            std.debug.print("looping parse_let_statement\n", .{});
+        while (!self.curr_token_is(token.Token.SEMICOLON) and !self.curr_token_is(token.Token.EOF)) {
             self.next_token();
         }
         return stmt;
@@ -99,7 +98,6 @@ const Parser = struct {
             return null;
         }
         while (!self.curr_token_is(token.Token.EOF)) {
-            std.debug.print("looping parse_program\n", .{});
             if (self.parse_statement()) |stmt| {
                 if (program.statements) |*statements| {
                     statements.*[program.stmt_idx] = stmt;
@@ -126,7 +124,7 @@ test "parse_let_statement" {
     const input = "let x = 5;";
     var l = lexer.Lexer.new(input);
     var parser = Parser.new(l);
-    parser.parse_let_statement();
+    _ = parser.parse_let_statement();
 }
 
 test "curr_token_is" {
@@ -145,29 +143,26 @@ test "curr_token_is" {
 }
 
 test "let_statement" {
-    // const input =
-    //     \\let x = 5;
-    //     \\let y = 10;
-    //     \\let foobar = 838383
-    // ;
-    //
-    // var l = lexer.Lexer.new(input);
-    // var p = Parser.new(l);
-    // if (try p.parse_program()) |program| {
-    //     std.debug.print("parse_program() did not return null\n", .{});
-    //     std.debug.print("{?}\n", .{program});
-    //     // try std.testing.expectEqual(program.statements.?.len, 3);
-    //     // const Test = struct {
-    //     //     t: []const u8,
-    //     // };
-    //     //const tests: [3]Test = .{ .{ .t = "x" }, .{ .t = "y" }, .{ .t = "foobar" } };
-    //     // for (tests, 0..) |tst, i| {
-    //     //     if (program.statements) |statements| {
-    //     //         const stmt: ast.Statement = statements[i];
-    //     //         try std.testing.expectEqualStrings(stmt.name.value, tst.t);
-    //     //     }
-    //     // }
-    // } else {
-    //     std.debug.print("parse_program() returned null\n", .{});
-    // }
+    const input =
+        \\let x = 5;
+        \\let y = 10;
+        \\let foobar = 838383;
+    ;
+
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    if (try p.parse_program()) |program| {
+        const Test = struct {
+            t: []const u8,
+        };
+        const tests: [3]Test = .{ .{ .t = "x" }, .{ .t = "y" }, .{ .t = "foobar" } };
+        for (tests, 0..) |tst, i| {
+            if (program.statements) |statements| {
+                const stmt: ast.Statement = statements[i];
+                try std.testing.expectEqualStrings(stmt.LetStatement.name.value, tst.t);
+            }
+        }
+    } else {
+        std.debug.print("parse_program() returned null\n", .{});
+    }
 }
