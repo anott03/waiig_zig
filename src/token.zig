@@ -86,6 +86,41 @@ pub fn get_literal(t: Token) []const u8 {
     };
 }
 
+pub fn get_type_str(t: Token) []const u8 {
+    return switch (t) {
+        .IDENT => "IDENT",
+        .INT => "INT",
+
+        .ILLEGAL => "ILLEGAL",
+        .EOF => "EOF",
+        .COMMA => "COMMA",
+        .SEMICOLON => "SEMICOLON",
+        .LPAREN => "LPAREN",
+        .RPAREN => "RPAREN",
+        .LSQUIRLY => "LSQUIRlY",
+        .RSQUIRLY => "RSQUIRLy",
+        .FUNCTION => "FUNCTION",
+        .LET => "LET",
+        .TRUE => "TRUE",
+        .FALSE => "FALSE",
+        .IF => "IF",
+        .ELSE => "ELSE",
+        .RETURN => "RETURN",
+
+        .ASSIGN => "ASSIGN",
+        .PLUS => "PLUS",
+        .MINUS => "MINUS",
+        .BANG => "BANG",
+        .ASTERISK => "ASTERISK",
+        .SLASH => "SLASH",
+
+        .LT => "LT",
+        .GT => "GT",
+        .EQ => "EQ",
+        .NEQ => "NEQ",
+    };
+}
+
 test "lookup_ident" {
     var t: Token = lookup_ident("let");
     try std.testing.expectEqual(t, Token.LET);

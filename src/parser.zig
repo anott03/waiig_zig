@@ -3,22 +3,42 @@ const ast = @import("ast.zig");
 const lexer = @import("lexer.zig");
 const token = @import("token.zig");
 
+const StringArrayList = std.ArrayList([]const u8);
+
 const Parser = struct {
     const Self = @This();
 
     l: lexer.Lexer,
     curr_token: token.Token,
     peek_token: token.Token,
+    errors: StringArrayList,
+    alloc: std.mem.Allocator,
 
     pub fn new(l: lexer.Lexer) Self {
+        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+        const allocator = gpa.allocator();
         var p: Self = .{
             .l = l,
             .curr_token = undefined,
             .peek_token = undefined,
+            .errors = StringArrayList.init(allocator),
+            .alloc = allocator,
         };
         p.next_token();
         p.next_token();
         return p;
+    }
+
+    fn errors(self: Self) StringArrayList {
+        return self.errors;
+    }
+
+    fn peek_error(self: *Self, t: token.Token) void {
+        const msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
+        defer self.alloc.free(msg);
+        self.errors.append(msg) catch {
+            std.debug.print("Error appending message\n", .{});
+        };
     }
 
     fn next_token(self: *Self) void {
@@ -74,6 +94,7 @@ const Parser = struct {
             self.next_token();
             return true;
         }
+        self.peek_error(t);
         return false;
     }
 
@@ -93,7 +114,7 @@ const Parser = struct {
 
     pub fn parse_program(self: *Self) !?ast.Program {
         var program = ast.Program{ .stmt_idx = 0, .statements = null };
-        program.statements = std.heap.page_allocator.alloc(ast.Statement, 10) catch null;
+        program.statements = self.alloc.alloc(ast.Statement, 10) catch null;
         if (program.statements == null) {
             return null;
         }
@@ -105,13 +126,13 @@ const Parser = struct {
                 }
                 if (program.statements.?.len == program.stmt_idx) {
                     var old_stmts = program.statements.?;
-                    program.statements = std.heap.page_allocator.alloc(ast.Statement, program.stmt_idx * 2 + 1) catch null;
+                    program.statements = self.alloc.alloc(ast.Statement, program.stmt_idx * 2 + 1) catch null;
                     for (old_stmts, 0..) |statement, i| {
                         if (program.statements) |*statements| {
                             statements.*[i] = statement;
                         }
                     }
-                    std.heap.page_allocator.free(old_stmts);
+                    self.alloc.free(old_stmts);
                 }
             }
             self.next_token();
@@ -152,9 +173,7 @@ test "let_statement" {
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
     if (try p.parse_program()) |program| {
-        const Test = struct {
-            t: []const u8,
-        };
+        const Test = struct { t: []const u8 };
         const tests: [3]Test = .{ .{ .t = "x" }, .{ .t = "y" }, .{ .t = "foobar" } };
         for (tests, 0..) |tst, i| {
             if (program.statements) |statements| {
@@ -165,4 +184,20 @@ test "let_statement" {
     } else {
         std.debug.print("parse_program() returned null\n", .{});
     }
+}
+
+test "let_statement_errors" {
+    const input =
+        \\let x = 5;
+        \\let y = 10;
+        \\let 838383;
+    ;
+
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    // if the previous test passes, then we already know that parese_program
+    // works on this input
+    _ = try p.parse_program();
+    const errors = p.errors;
+    std.debug.print("{any}\n", .{errors.items});
 }
