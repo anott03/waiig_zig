@@ -3,7 +3,11 @@ const ast = @import("ast.zig");
 const lexer = @import("lexer.zig");
 const token = @import("token.zig");
 
-const StringArrayList = std.ArrayList([]const u8);
+const ParseError = struct {
+    msg: []const u8,
+};
+
+const ParseErrorArrayList = std.ArrayList(ParseError);
 
 const Parser = struct {
     const Self = @This();
@@ -11,7 +15,7 @@ const Parser = struct {
     l: lexer.Lexer,
     curr_token: token.Token,
     peek_token: token.Token,
-    errors: StringArrayList,
+    errors: ParseErrorArrayList,
     alloc: std.mem.Allocator,
 
     pub fn new(l: lexer.Lexer) Self {
@@ -21,7 +25,7 @@ const Parser = struct {
             .l = l,
             .curr_token = undefined,
             .peek_token = undefined,
-            .errors = StringArrayList.init(allocator),
+            .errors = ParseErrorArrayList.init(std.heap.page_allocator),
             .alloc = allocator,
         };
         p.next_token();
@@ -29,14 +33,19 @@ const Parser = struct {
         return p;
     }
 
-    fn errors(self: Self) StringArrayList {
+    fn errors(self: Self) ParseErrorArrayList {
         return self.errors;
     }
 
     fn peek_error(self: *Self, t: token.Token) void {
-        const msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
-        defer self.alloc.free(msg);
-        self.errors.append(msg) catch {
+        _ = t;
+        // const msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
+        // _ = msg;
+        // const err = ParseError{ .msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error" };
+
+        const err = ParseError{ .msg = "Unexpected token" };
+
+        self.errors.append(err) catch {
             std.debug.print("Error appending message\n", .{});
         };
     }
