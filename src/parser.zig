@@ -8,6 +8,7 @@ const ParseError = struct {
 };
 
 const ParseErrorArrayList = std.ArrayList(ParseError);
+const StatementArrayList = std.ArrayList(ast.Statement);
 
 const Parser = struct {
     const Self = @This();
@@ -118,27 +119,10 @@ const Parser = struct {
     }
 
     pub fn parse_program(self: *Self) !?ast.Program {
-        var program = ast.Program{ .stmt_idx = 0, .statements = null };
-        program.statements = self.alloc.alloc(ast.Statement, 10) catch null;
-        if (program.statements == null) {
-            return null;
-        }
+        var program = ast.Program{ .stmt_idx = 0, .statements = StatementArrayList.init(std.heap.page_allocator) };
         while (!self.curr_token_is(token.Token.EOF)) {
             if (self.parse_statement()) |stmt| {
-                if (program.statements) |*statements| {
-                    statements.*[program.stmt_idx] = stmt;
-                    program.stmt_idx += 1;
-                }
-                if (program.statements.?.len == program.stmt_idx) {
-                    var old_stmts = program.statements.?;
-                    program.statements = self.alloc.alloc(ast.Statement, program.stmt_idx * 2 + 1) catch null;
-                    for (old_stmts, 0..) |statement, i| {
-                        if (program.statements) |*statements| {
-                            statements.*[i] = statement;
-                        }
-                    }
-                    self.alloc.free(old_stmts);
-                }
+                try program.statements.append(stmt);
             }
             self.next_token();
         }
@@ -181,10 +165,8 @@ test "let_statement" {
         const Test = struct { t: []const u8 };
         const tests: [3]Test = .{ .{ .t = "x" }, .{ .t = "y" }, .{ .t = "foobar" } };
         for (tests, 0..) |tst, i| {
-            if (program.statements) |statements| {
-                const stmt: ast.Statement = statements[i];
-                try std.testing.expectEqualStrings(stmt.LetStatement.name.value, tst.t);
-            }
+            const stmt: ast.Statement = program.statements.items[i];
+            try std.testing.expectEqualStrings(stmt.LetStatement.name.value, tst.t);
         }
     } else {
         std.debug.print("parse_program() returned null\n", .{});
@@ -216,8 +198,6 @@ test "return_statement" {
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
     if (try p.parse_program()) |program| {
-        if (program.statements) |statements| {
-            _ = statements;
-        }
+        _ = program;
     }
 }

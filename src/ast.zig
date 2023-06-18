@@ -49,7 +49,7 @@ pub const Statement = union(enum) {
 };
 pub const Program = struct {
     const Self = @This();
-    statements: ?[]Statement,
+    statements: std.ArrayList(Statement),
     stmt_idx: usize,
     pub fn token_literal(self: Self) []const u8 {
         if (self.statements) |statements| {
