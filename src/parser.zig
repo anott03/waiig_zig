@@ -206,3 +206,18 @@ test "let_statement_errors" {
     const errors = p.errors;
     std.debug.print("{any}\n", .{errors.items});
 }
+
+test "return_statement" {
+    const input =
+        \\return 5;
+        \\ return 10;
+        \\ return 993322;
+    ;
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    if (try p.parse_program()) |program| {
+        if (program.statements) |statements| {
+            _ = statements;
+        }
+    }
+}
