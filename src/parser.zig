@@ -38,12 +38,8 @@ const Parser = struct {
     }
 
     fn peek_error(self: *Self, t: token.Token) void {
-        _ = t;
-        // const msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
-        // _ = msg;
-        // const err = ParseError{ .msg = std.fmt.allocPrint(self.alloc, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error" };
-
-        const err = ParseError{ .msg = "Unexpected token" };
+        const msg = std.fmt.allocPrint(std.heap.page_allocator, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
+        const err = ParseError{ .msg = msg };
 
         self.errors.append(err) catch {
             std.debug.print("Error appending message\n", .{});
