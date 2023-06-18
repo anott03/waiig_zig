@@ -28,7 +28,7 @@ pub const LetStatement = struct {
     fn statement_node(self: Self) void {
         _ = self;
     }
-    fn token_literal(self: Self) []const u8 {
+    pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
 };
@@ -39,7 +39,7 @@ pub const ReturnStatement = struct {
     fn statement_node(self: Self) void {
         _ = self;
     }
-    fn token_literal(self: Self) []const u8 {
+    pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
 };

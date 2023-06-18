@@ -198,6 +198,18 @@ test "return_statement" {
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
     if (try p.parse_program()) |program| {
-        _ = program;
+        if (program.statements.items.len != 3) {
+            std.debug.print("Error: program.statements does not contain 3 statements\n", .{});
+        }
+        for (program.statements.items) |stmt| {
+            switch (stmt) {
+                .ReturnStatement => {
+                    try std.testing.expectEqualStrings(stmt.ReturnStatement.token_literal(), "return");
+                },
+                else => {
+                    std.debug.print("Error: statement is not a return statement\n", .{});
+                },
+            }
+        }
     }
 }
