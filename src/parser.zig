@@ -33,11 +33,6 @@ const Parser = struct {
         p.next_token();
         return p;
     }
-
-    fn errors(self: Self) ParseErrorArrayList {
-        return self.errors;
-    }
-
     fn peek_error(self: *Self, t: token.Token) void {
         const msg = std.fmt.allocPrint(std.heap.page_allocator, "Expected next token to be {s}, got {s} instead.", .{ token.get_type_str(t), token.get_type_str(self.peek_token) }) catch "Error creating error";
         const err = ParseError{ .msg = msg };
@@ -55,6 +50,7 @@ const Parser = struct {
     fn parse_statement(self: *Self) ?ast.Statement {
         return switch (self.curr_token) {
             .LET => self.parse_let_statement(),
+            .RETURN => self.parse_return_statement(),
             else => null,
         };
     }
@@ -112,6 +108,18 @@ const Parser = struct {
         if (!self.expect_peek(token.Token.ASSIGN)) {
             return null;
         }
+        while (!self.curr_token_is(token.Token.SEMICOLON) and !self.curr_token_is(token.Token.EOF)) {
+            self.next_token();
+        }
+        return stmt;
+    }
+
+    pub fn parse_return_statement(self: *Self) ?ast.Statement {
+        var stmt = ast.Statement{ .ReturnStatement = .{
+            .token = self.curr_token,
+            .return_value = undefined,
+        } };
+        self.next_token();
         while (!self.curr_token_is(token.Token.SEMICOLON) and !self.curr_token_is(token.Token.EOF)) {
             self.next_token();
         }
@@ -185,8 +193,8 @@ test "let_statement_errors" {
     // if the previous test passes, then we already know that parese_program
     // works on this input
     _ = try p.parse_program();
-    const errors = p.errors;
-    std.debug.print("{any}\n", .{errors.items});
+    const errors: ParseErrorArrayList = p.errors;
+    try std.testing.expectEqual(errors.items.len, 1);
 }
 
 test "return_statement" {
