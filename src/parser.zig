@@ -10,6 +10,27 @@ const ParseError = struct {
 const ParseErrorArrayList = std.ArrayList(ParseError);
 const StatementArrayList = std.ArrayList(ast.Statement);
 
+const prefixParseFn = union(enum) {
+    pub fn get(t: token.Token) ?*fn () ast.Expression {
+        _ = t;
+        return null;
+    }
+};
+const infixParseFn = union(enum) {
+    pub fn get(t: token.Token) ?*fn (ast.Expression) ast.Expression {
+        _ = t;
+        return null;
+    }
+};
+
+const LOWEST = 1;
+const EQUALS = 2;
+const LESSGREATER = 3;
+const SUM = 4;
+const PRODUCT = 5;
+const PREFIX = 6;
+const CALL = 7;
+
 const Parser = struct {
     const Self = @This();
 
@@ -51,7 +72,7 @@ const Parser = struct {
         return switch (self.curr_token) {
             .LET => self.parse_let_statement(),
             .RETURN => self.parse_return_statement(),
-            else => null,
+            else => self.parse_expression_statement(),
         };
     }
 
@@ -104,7 +125,7 @@ const Parser = struct {
         if (!self.expect_peek(token.Token{ .IDENT = "" })) {
             return null;
         }
-        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = ast.Expression{} } };
+        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = ast.Expression{ .ident = undefined } } };
         if (!self.expect_peek(token.Token.ASSIGN)) {
             return null;
         }
@@ -121,6 +142,29 @@ const Parser = struct {
         } };
         self.next_token();
         while (!self.curr_token_is(token.Token.SEMICOLON) and !self.curr_token_is(token.Token.EOF)) {
+            self.next_token();
+        }
+        return stmt;
+    }
+
+    fn parse_expression(self: Self, precedence: i32) ?ast.Expression {
+        _ = precedence;
+        var prefix = prefixParseFn.get(self.curr_token);
+        if (prefix) |p| {
+            return p.*();
+        }
+        return null;
+    }
+
+    pub fn parse_expression_statement(self: *Self) ?ast.Statement {
+        var stmt = ast.Statement{ .ExpressionStatement = .{
+            .token = self.curr_token,
+            .expression = .{ .ident = undefined },
+        } };
+        if (self.parse_expression(LOWEST)) |exp| {
+            stmt.ExpressionStatement.expression = exp;
+        }
+        if (self.peek_token_is(token.Token.SEMICOLON)) {
             self.next_token();
         }
         return stmt;
@@ -218,6 +262,21 @@ test "return_statement" {
                     std.debug.print("Error: statement is not a return statement\n", .{});
                 },
             }
+        }
+    }
+}
+
+test "identifier_expression" {
+    const input = "foobar;";
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    if (try p.parse_program()) |program| {
+        if (program.statements.getLastOrNull()) |stmt| {
+            // std.debug.print("STATEMENT: {?}\n", .{stmt});
+            var ident = stmt.ExpressionStatement.expression.ident;
+            try std.testing.expectEqualStrings("foobar", ident.value);
+        } else {
+            std.debug.print("Error: program does not have enough statements.\n", .{});
         }
     }
 }
