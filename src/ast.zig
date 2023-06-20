@@ -12,12 +12,27 @@ pub const Identifier = struct {
     fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
+    pub fn to_string(self: Self) []const u8 {
+        return self.value;
+    }
 };
 pub const Expression = struct {
     pub fn token_literal() []const u8 {
         return "";
     }
     fn expression_node() void {}
+};
+pub const ExpressionStatement = struct {
+    const Self = @This();
+    token: t.Token,
+    expression: Expression,
+
+    pub fn token_literal(self: Self) []const u8 {
+        return t.get_literal(self.token);
+    }
+    pub fn to_string(self: *Self) []const u8 {
+        _ = self;
+    }
 };
 pub const LetStatement = struct {
     const Self = @This();
@@ -31,6 +46,9 @@ pub const LetStatement = struct {
     pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
+    pub fn to_string(self: *Self) []const u8 {
+        _ = self;
+    }
 };
 pub const ReturnStatement = struct {
     const Self = @This();
@@ -41,6 +59,9 @@ pub const ReturnStatement = struct {
     }
     pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
+    }
+    pub fn to_string(self: *Self) []const u8 {
+        _ = self;
     }
 };
 pub const Statement = union(enum) {
@@ -57,6 +78,14 @@ pub const Program = struct {
         }
         return "";
     }
+    pub fn to_string(self: *Self) []const u8 {
+        for (self.statements) |stmt| {
+            _ = stmt;
+        }
+    }
 };
 
-test "struct" {}
+test "to_string" {
+    // TODO: create a program with a series of statements and test that to_string
+    // produces the correct Monkey source from it.
+}
