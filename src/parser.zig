@@ -10,18 +10,22 @@ const ParseError = struct {
 const ParseErrorArrayList = std.ArrayList(ParseError);
 const StatementArrayList = std.ArrayList(ast.Statement);
 
-const prefixParseFn = union(enum) {
-    pub fn get(t: token.Token) ?*fn () ast.Expression {
-        _ = t;
-        return null;
-    }
-};
-const infixParseFn = union(enum) {
-    pub fn get(t: token.Token) ?*fn (ast.Expression) ast.Expression {
-        _ = t;
-        return null;
-    }
-};
+fn parse_identifier(p: Parser) ast.Expression {
+    return ast.Expression{ .ident = .{
+        .token = p.curr_token,
+        .value = token.get_literal(p.curr_token),
+    } };
+}
+fn get_prefix_parse_fn(t: token.Token) ?*const fn (p: Parser) ast.Expression {
+    return switch (t) {
+        .IDENT => &parse_identifier,
+        else => null,
+    };
+}
+pub fn get_infix_parse_fn(t: token.Token) ?*const fn (p: Parser, e: ast.Expression) ast.Expression {
+    _ = t;
+    return null;
+}
 
 const LOWEST = 1;
 const EQUALS = 2;
@@ -149,9 +153,9 @@ const Parser = struct {
 
     fn parse_expression(self: Self, precedence: i32) ?ast.Expression {
         _ = precedence;
-        var prefix = prefixParseFn.get(self.curr_token);
+        var prefix = get_prefix_parse_fn(self.curr_token);
         if (prefix) |p| {
-            return p.*();
+            return p(self);
         }
         return null;
     }
@@ -280,3 +284,19 @@ test "identifier_expression" {
         }
     }
 }
+
+// test "int_literal_expression" {
+//     const input = "5;";
+//     var l = lexer.Lexer.new(input);
+//     var p = Parser.new(l);
+//     if (try p.parse_program()) |program| {
+//         if (program.statements.getLastOrNull()) |stmt| {
+//             const literal = stmt.IntegerLiteral;
+//             _ = literal;
+//             // try std.testing.expectEqual(5, literal.value);
+//             // std.debug.print("{%d}\n", literal.value);
+//         } else {
+//             std.debug.print("Error: program does not have enough statements.\n", .{});
+//         }
+//     }
+// }

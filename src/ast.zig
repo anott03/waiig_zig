@@ -38,6 +38,17 @@ pub const ExpressionStatement = struct {
         _ = self;
     }
 };
+pub const IntegerLiteral = struct {
+    const Self = @This();
+    token: t.Token,
+    value: i64,
+    pub fn token_literal(self: Self) []const u8 {
+        return t.get_literal(self.token);
+    }
+    pub fn to_string(self: Self) []const u8 {
+        return self.token_literal();
+    }
+};
 pub const LetStatement = struct {
     const Self = @This();
     token: t.Token,
@@ -72,6 +83,7 @@ pub const Statement = union(enum) {
     LetStatement: LetStatement,
     ReturnStatement: ReturnStatement,
     ExpressionStatement: ExpressionStatement,
+    IntegerLiteral: IntegerLiteral,
 };
 pub const Program = struct {
     const Self = @This();
