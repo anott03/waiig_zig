@@ -10,8 +10,15 @@ const ParseError = struct {
 const ParseErrorArrayList = std.ArrayList(ParseError);
 const StatementArrayList = std.ArrayList(ast.Statement);
 
+fn parse_integer_literal(p: Parser) ast.Expression {
+    var literal = ast.Expression{ .IntegerLiteral = .{
+        .token = p.curr_token,
+        .value = std.fmt.parseInt(i32, token.get_literal(p.curr_token), 10) catch -1,
+    } };
+    return literal;
+}
 fn parse_identifier(p: Parser) ast.Expression {
-    return ast.Expression{ .ident = .{
+    return ast.Expression{ .Identifier = .{
         .token = p.curr_token,
         .value = token.get_literal(p.curr_token),
     } };
@@ -19,6 +26,7 @@ fn parse_identifier(p: Parser) ast.Expression {
 fn get_prefix_parse_fn(t: token.Token) ?*const fn (p: Parser) ast.Expression {
     return switch (t) {
         .IDENT => &parse_identifier,
+        .INT => &parse_integer_literal,
         else => null,
     };
 }
@@ -129,7 +137,7 @@ const Parser = struct {
         if (!self.expect_peek(token.Token{ .IDENT = "" })) {
             return null;
         }
-        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = ast.Expression{ .ident = undefined } } };
+        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = ast.Expression{ .Identifier = undefined } } };
         if (!self.expect_peek(token.Token.ASSIGN)) {
             return null;
         }
@@ -163,7 +171,7 @@ const Parser = struct {
     pub fn parse_expression_statement(self: *Self) ?ast.Statement {
         var stmt = ast.Statement{ .ExpressionStatement = .{
             .token = self.curr_token,
-            .expression = .{ .ident = undefined },
+            .expression = .{ .Identifier = undefined },
         } };
         if (self.parse_expression(LOWEST)) |exp| {
             stmt.ExpressionStatement.expression = exp;
@@ -276,27 +284,54 @@ test "identifier_expression" {
     var p = Parser.new(l);
     if (try p.parse_program()) |program| {
         if (program.statements.getLastOrNull()) |stmt| {
-            // std.debug.print("STATEMENT: {?}\n", .{stmt});
-            var ident = stmt.ExpressionStatement.expression.ident;
-            try std.testing.expectEqualStrings("foobar", ident.value);
+            switch (stmt) {
+                .ExpressionStatement => {
+                    switch (stmt.ExpressionStatement.expression) {
+                        .Identifier => {
+                            try std.testing.expectEqualStrings("foobar", stmt.ExpressionStatement.expression.Identifier.value);
+                        },
+                        else => {
+                            std.debug.print("Error: ExpressionStatement.expression is not an Identifier\n", .{});
+                        },
+                    }
+                },
+                else => {
+                    std.debug.print("Error: stmt is not an ExpressionStatement", .{});
+                },
+            }
         } else {
-            std.debug.print("Error: program does not have enough statements.\n", .{});
+            std.debug.print("Error: no statements in program\n", .{});
         }
+    } else {
+        std.debug.print("Error: parse_program returned null\n", .{});
     }
 }
 
-// test "int_literal_expression" {
-//     const input = "5;";
-//     var l = lexer.Lexer.new(input);
-//     var p = Parser.new(l);
-//     if (try p.parse_program()) |program| {
-//         if (program.statements.getLastOrNull()) |stmt| {
-//             const literal = stmt.IntegerLiteral;
-//             _ = literal;
-//             // try std.testing.expectEqual(5, literal.value);
-//             // std.debug.print("{%d}\n", literal.value);
-//         } else {
-//             std.debug.print("Error: program does not have enough statements.\n", .{});
-//         }
-//     }
-// }
+test "int_literal_expression" {
+    const input = "5;";
+    var l = lexer.Lexer.new(input);
+    var p = Parser.new(l);
+    if (try p.parse_program()) |program| {
+        if (program.statements.getLastOrNull()) |stmt| {
+            switch (stmt) {
+                .ExpressionStatement => {
+                    switch (stmt.ExpressionStatement.expression) {
+                        .IntegerLiteral => {
+                            try std.testing.expect(5 == stmt.ExpressionStatement.expression.IntegerLiteral.value);
+                        },
+                        else => {
+                            std.debug.print("Error: ExpressionStatement.expression is not an IntegerLiteral\n", .{});
+                        },
+                    }
+                },
+                else => {
+                    std.debug.print("Error: stmt is not an ExpressionStatement", .{});
+                },
+            }
+        } else {
+            std.debug.print("Error: no statements in program\n", .{});
+        }
+    } else {
+        std.debug.print("Error: parse_program returned null\n", .{});
+    }
+}

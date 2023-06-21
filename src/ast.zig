@@ -16,17 +16,17 @@ pub const Identifier = struct {
         return self.value;
     }
 };
-pub const Expression = struct {
-    const Self = @This();
-    ident: Identifier,
-    pub fn token_literal() []const u8 {
-        return "";
-    }
-    fn expression_node() void {}
-    pub fn to_string(self: Self) []const u8 {
-        return self.ident.to_string();
-    }
-};
+// pub const Expression = struct {
+//     const Self = @This();
+//     ident: Identifier,
+//     pub fn token_literal() []const u8 {
+//         return "";
+//     }
+//     fn expression_node() void {}
+//     pub fn to_string(self: Self) []const u8 {
+//         return self.ident.to_string();
+//     }
+// };
 pub const ExpressionStatement = struct {
     const Self = @This();
     token: t.Token,
@@ -41,7 +41,7 @@ pub const ExpressionStatement = struct {
 pub const IntegerLiteral = struct {
     const Self = @This();
     token: t.Token,
-    value: i64,
+    value: i32,
     pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
@@ -79,11 +79,14 @@ pub const ReturnStatement = struct {
         _ = self;
     }
 };
+pub const Expression = union(enum) {
+    Identifier: Identifier,
+    IntegerLiteral: IntegerLiteral,
+};
 pub const Statement = union(enum) {
     LetStatement: LetStatement,
     ReturnStatement: ReturnStatement,
     ExpressionStatement: ExpressionStatement,
-    IntegerLiteral: IntegerLiteral,
 };
 pub const Program = struct {
     const Self = @This();
