@@ -16,17 +16,6 @@ pub const Identifier = struct {
         return self.value;
     }
 };
-// pub const Expression = struct {
-//     const Self = @This();
-//     ident: Identifier,
-//     pub fn token_literal() []const u8 {
-//         return "";
-//     }
-//     fn expression_node() void {}
-//     pub fn to_string(self: Self) []const u8 {
-//         return self.ident.to_string();
-//     }
-// };
 pub const ExpressionStatement = struct {
     const Self = @This();
     token: t.Token,
@@ -36,6 +25,20 @@ pub const ExpressionStatement = struct {
     }
     pub fn to_string(self: *Self) []const u8 {
         _ = self;
+    }
+};
+pub const PrefixExpression = struct {
+    const Self = @This();
+    token: t.Token,
+    operator: []const u8,
+    right: *Expression,
+
+    pub fn token_literal(self: Self) []const u8 {
+        return t.get_literal(self.token);
+    }
+    pub fn to_string(self: Self) []const u8 {
+        _ = self;
+        return "";
     }
 };
 pub const IntegerLiteral = struct {
@@ -82,6 +85,7 @@ pub const ReturnStatement = struct {
 pub const Expression = union(enum) {
     Identifier: Identifier,
     IntegerLiteral: IntegerLiteral,
+    PrefixExpression: PrefixExpression,
 };
 pub const Statement = union(enum) {
     LetStatement: LetStatement,

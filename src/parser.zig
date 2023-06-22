@@ -10,27 +10,41 @@ const ParseError = struct {
 const ParseErrorArrayList = std.ArrayList(ParseError);
 const StatementArrayList = std.ArrayList(ast.Statement);
 
-fn parse_integer_literal(p: Parser) ast.Expression {
+fn parse_prefix_expression(p: *Parser) ast.Expression {
+    var expression = ast.Expression{ .PrefixExpression = .{
+        .token = p.curr_token,
+        .operator = token.get_literal(p.curr_token),
+        .right = undefined,
+    } };
+    p.next_token();
+    if (p.parse_expression(PREFIX)) |exp| {
+        expression.PrefixExpression.right = &exp;
+    }
+    return expression;
+}
+fn parse_integer_literal(p: *Parser) ast.Expression {
     var literal = ast.Expression{ .IntegerLiteral = .{
         .token = p.curr_token,
         .value = std.fmt.parseInt(i32, token.get_literal(p.curr_token), 10) catch -1,
     } };
     return literal;
 }
-fn parse_identifier(p: Parser) ast.Expression {
+fn parse_identifier(p: *Parser) ast.Expression {
     return ast.Expression{ .Identifier = .{
         .token = p.curr_token,
         .value = token.get_literal(p.curr_token),
     } };
 }
-fn get_prefix_parse_fn(t: token.Token) ?*const fn (p: Parser) ast.Expression {
+fn get_prefix_parse_fn(t: token.Token) ?*const fn (p: *Parser) ast.Expression {
     return switch (t) {
         .IDENT => &parse_identifier,
         .INT => &parse_integer_literal,
+        .BANG => &parse_prefix_expression,
+        .MINUS => &parse_prefix_expression,
         else => null,
     };
 }
-pub fn get_infix_parse_fn(t: token.Token) ?*const fn (p: Parser, e: ast.Expression) ast.Expression {
+pub fn get_infix_parse_fn(t: token.Token) ?*const fn (p: *Parser, e: ast.Expression) ast.Expression {
     _ = t;
     return null;
 }
@@ -159,7 +173,7 @@ const Parser = struct {
         return stmt;
     }
 
-    fn parse_expression(self: Self, precedence: i32) ?ast.Expression {
+    fn parse_expression(self: *Self, precedence: i32) ?ast.Expression {
         _ = precedence;
         var prefix = get_prefix_parse_fn(self.curr_token);
         if (prefix) |p| {
@@ -333,5 +347,30 @@ test "int_literal_expression" {
         }
     } else {
         std.debug.print("Error: parse_program returned null\n", .{});
+    }
+}
+
+test "prefix_expressions" {
+    const prefix_test = struct {
+        input: []const u8,
+        operator: []const u8,
+        int_val: i32,
+    };
+    const prefix_tests: [2]prefix_test = .{
+        .{ .input = "!5;", .operator = "!", .int_val = 5 },
+        .{ .input = "-15;", .operator = "-", .int_val = 15 },
+    };
+    for (prefix_tests) |tst| {
+        var l = lexer.Lexer.new(tst.input);
+        var p = Parser.new(l);
+        if (try p.parse_program()) |program| {
+            if (program.statements.getLastOrNull()) |stmt| {
+                _ = stmt;
+            } else {
+                std.debug.print("Error: program has no statements\n", .{});
+            }
+        } else {
+            std.debug.print("Error: parse_program returned null\n", .{});
+        }
     }
 }
