@@ -8,6 +8,6 @@ Following Thorsten Ball's book "Writing an Interpreter in Go" using zig.
 + [ ] Parser
     + [x] parsing let statements
     + [x] parsing return statements
-    + [x] parsing expressions (infix)
-    + [x] parsing integer literals
     + [ ] parsing expressions (prefix)
+    + [x] parsing integer literals
+    + [ ] parsing expressions (infix)
