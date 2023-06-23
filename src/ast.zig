@@ -19,7 +19,7 @@ pub const Identifier = struct {
 pub const ExpressionStatement = struct {
     const Self = @This();
     token: t.Token,
-    expression: Expression,
+    expression: *Expression,
     pub fn token_literal(self: Self) []const u8 {
         return t.get_literal(self.token);
     }
@@ -56,7 +56,7 @@ pub const LetStatement = struct {
     const Self = @This();
     token: t.Token,
     name: Identifier,
-    value: Expression,
+    value: *Expression,
 
     fn statement_node(self: Self) void {
         _ = self;
@@ -71,7 +71,7 @@ pub const LetStatement = struct {
 pub const ReturnStatement = struct {
     const Self = @This();
     token: t.Token,
-    return_value: Expression,
+    return_value: *Expression,
     fn statement_node(self: Self) void {
         _ = self;
     }

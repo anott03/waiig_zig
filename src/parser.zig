@@ -16,10 +16,17 @@ fn parse_prefix_expression(p: *Parser) ast.Expression {
         .operator = token.get_literal(p.curr_token),
         .right = undefined,
     } };
-    p.next_token();
+    var mem = p.alloc.alloc(ast.Expression, 1) catch null;
     if (p.parse_expression(PREFIX)) |exp| {
-        expression.PrefixExpression.right = &exp;
+        // expression.PrefixExpression.right = &exp;
+        if (mem) |*mut_mem| {
+            mut_mem.*[0] = .{
+                .Identifier = exp,
+            };
+        }
+        expression.PrefixExpression.right = mem[0];
     }
+    p.next_token();
     return expression;
 }
 fn parse_integer_literal(p: *Parser) ast.Expression {
@@ -65,17 +72,13 @@ const Parser = struct {
     peek_token: token.Token,
     errors: ParseErrorArrayList,
     alloc: std.mem.Allocator,
+    arena: std.heap.ArenaAllocator,
 
     pub fn new(l: lexer.Lexer) Self {
         var gpa = std.heap.GeneralPurposeAllocator(.{}){};
         const allocator = gpa.allocator();
-        var p: Self = .{
-            .l = l,
-            .curr_token = undefined,
-            .peek_token = undefined,
-            .errors = ParseErrorArrayList.init(std.heap.page_allocator),
-            .alloc = allocator,
-        };
+        var arena = std.heap.ArenaAllocator.init(allocator);
+        var p: Self = .{ .l = l, .curr_token = undefined, .peek_token = undefined, .errors = ParseErrorArrayList.init(std.heap.page_allocator), .alloc = arena.allocator(), .arena = arena };
         p.next_token();
         p.next_token();
         return p;
@@ -151,7 +154,14 @@ const Parser = struct {
         if (!self.expect_peek(token.Token{ .IDENT = "" })) {
             return null;
         }
-        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = ast.Expression{ .Identifier = undefined } } };
+        var exp = self.alloc.alloc(ast.Expression, 1) catch null;
+        var stmt = ast.Statement{ .LetStatement = .{ .token = self.curr_token, .name = ast.Identifier{ .token = self.curr_token, .value = token.get_literal(self.curr_token) }, .value = undefined } };
+        if (exp) |*mut_exp| {
+            mut_exp.*[0] = .{
+                .Identifier = undefined,
+            };
+        }
+        stmt.LetStatement.value = exp[0];
         if (!self.expect_peek(token.Token.ASSIGN)) {
             return null;
         }
@@ -183,13 +193,17 @@ const Parser = struct {
     }
 
     pub fn parse_expression_statement(self: *Self) ?ast.Statement {
+        var exp = self.alloc.alloc(ast.Expression, 1) catch null;
+        if (self.parse_expression(LOWEST)) |e| {
+            // stmt.ExpressionStatement.expression = exp;
+            if (exp) |*mut_exp| {
+                mut_exp.*[0] = e;
+            }
+        }
         var stmt = ast.Statement{ .ExpressionStatement = .{
             .token = self.curr_token,
-            .expression = .{ .Identifier = undefined },
+            .expression = exp[0],
         } };
-        if (self.parse_expression(LOWEST)) |exp| {
-            stmt.ExpressionStatement.expression = exp;
-        }
         if (self.peek_token_is(token.Token.SEMICOLON)) {
             self.next_token();
         }
@@ -239,6 +253,7 @@ test "let_statement" {
 
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
+    defer p.arena.deinit();
     if (try p.parse_program()) |program| {
         const Test = struct { t: []const u8 };
         const tests: [3]Test = .{ .{ .t = "x" }, .{ .t = "y" }, .{ .t = "foobar" } };
@@ -260,6 +275,7 @@ test "let_statement_errors" {
 
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
+    defer p.arena.deinit();
     // if the previous test passes, then we already know that parese_program
     // works on this input
     _ = try p.parse_program();
@@ -275,6 +291,7 @@ test "return_statement" {
     ;
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
+    defer p.arena.deinit();
     if (try p.parse_program()) |program| {
         if (program.statements.items.len != 3) {
             std.debug.print("Error: program.statements does not contain 3 statements\n", .{});
@@ -296,6 +313,7 @@ test "identifier_expression" {
     const input = "foobar;";
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
+    defer p.arena.deinit();
     if (try p.parse_program()) |program| {
         if (program.statements.getLastOrNull()) |stmt| {
             switch (stmt) {
@@ -325,6 +343,7 @@ test "int_literal_expression" {
     const input = "5;";
     var l = lexer.Lexer.new(input);
     var p = Parser.new(l);
+    defer p.arena.deinit();
     if (try p.parse_program()) |program| {
         if (program.statements.getLastOrNull()) |stmt| {
             switch (stmt) {
@@ -363,6 +382,7 @@ test "prefix_expressions" {
     for (prefix_tests) |tst| {
         var l = lexer.Lexer.new(tst.input);
         var p = Parser.new(l);
+        defer p.arena.deinit();
         if (try p.parse_program()) |program| {
             if (program.statements.getLastOrNull()) |stmt| {
                 _ = stmt;
